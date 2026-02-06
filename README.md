@@ -43,7 +43,7 @@ This API uses advanced machine learning models to predict potential machine fail
 ┌─────────────────────────┐
 │  Stage 1: Failure       │
 │  Detection Model        │
-│  (RandomForest Classifier)   │
+│(RandomForest Classifier)│
 └────────┬────────────────┘
          │
          ├─── p_fail < threshold ───► No Failure (0)
