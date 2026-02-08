@@ -1,18 +1,22 @@
-# Core dependencies
+# Core numerical & ML dependencies
 numpy>=2.4.0
 pandas>=3.0.0
-scikit-learn>=1.8.0
 scipy>=1.17.0
 joblib>=1.5.0
 
+# ML models
+scikit-learn==1.6.1
 xgboost>=3.1.0
+
+# Backend
 fastapi>=0.128.0
 uvicorn>=0.40.0
-
-
 pydantic>=2.12.0
+httpx>=0.28.1
+groq>=0.4.0
+python-dotenv>=1.0.0
 
-
+# Dev & testing
 pytest>=7.4.0
 black>=23.7.0
 flake8>=6.1.0
