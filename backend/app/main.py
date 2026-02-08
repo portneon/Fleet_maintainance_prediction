@@ -11,13 +11,15 @@ load_dotenv()
 app = FastAPI()
 
 # Add CORS middleware to allow requests from frontend
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:3001", "http://127.0.0.1:3000", "https://fleet-maintainance-prediction.vercel.app/"],
+    allow_origins=["*"],  # or your frontend URL
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 @app.get("/")
 def health_check():
