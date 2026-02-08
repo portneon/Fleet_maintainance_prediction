@@ -56,6 +56,37 @@ export function downloadSingleResult(result: AnalysisResult, format: 'csv' | 'js
     }
 }
 
+// Helper function to convert markdown to HTML for PDF
+function convertMarkdownToHTML(text: string): string {
+    if (!text) return '';
+
+    const lines = text.split('\n');
+    let html = '';
+
+    for (const line of lines) {
+        // Handle ### headers
+        if (line.trim().startsWith('###')) {
+            const headerText = line.replace(/^###\s*/, '').replace(/\*\*/g, '');
+            html += `<h3 style="font-size: 16px; font-weight: bold; color: #1f2937; margin: 15px 0 8px 0; page-break-after: avoid;">${headerText}</h3>`;
+        }
+        // Handle regular lines with bold
+        else {
+            let processedLine = line;
+            // Replace **bold** with <strong>
+            processedLine = processedLine.replace(/\*\*(.+?)\*\*/g, '<strong style="font-weight: bold; color: #1f2937;">$1</strong>');
+
+            // Add line break if not empty
+            if (processedLine.trim()) {
+                html += `<p style="margin: 4px 0; line-height: 1.6; page-break-inside: avoid;">${processedLine}</p>`;
+            } else {
+                html += '<br />';
+            }
+        }
+    }
+
+    return html;
+}
+
 export async function downloadMaintenanceReportPDF(
     report: MaintenanceReport,
     machineId: string = 'Machine'
@@ -69,115 +100,108 @@ export async function downloadMaintenanceReportPDF(
         container.style.padding = '20px';
         container.style.backgroundColor = 'white';
         container.style.fontFamily = 'Arial, sans-serif';
-        
+
+        // Convert markdown report to HTML
+        const reportHTML = convertMarkdownToHTML(report.report || report.summary || 'No detailed report available');
+
         // Build HTML content
         const htmlContent = `
-            <div style="font-family: Arial, sans-serif;">
-                <h1 style="color: #1f2937; margin-bottom: 10px;">Maintenance Report</h1>
-                <p style="color: #6b7280; margin-bottom: 20px;">Machine ID: ${machineId}</p>
+            <div style="font-family: Arial, sans-serif; font-size: 13px;">
+                <h1 style="color: #1f2937; margin-bottom: 10px; font-size: 24px; page-break-after: avoid;">Maintenance Analysis Report</h1>
+                <p style="color: #6b7280; margin-bottom: 20px; font-size: 12px;">Machine ID: ${machineId}</p>
                 
-                <div style="border: 1px solid #e5e7eb; padding: 15px; margin-bottom: 20px; background: #f9fafb; border-radius: 4px;">
-                    <h2 style="font-size: 14px; color: #374151; margin: 0 0 10px 0;">Status</h2>
-                    <p style="margin: 0; color: #1f2937; font-weight: bold;">${report.status}</p>
+                <div style="border: 2px solid #e5e7eb; padding: 15px; margin-bottom: 15px; background: #f9fafb; border-radius: 4px; page-break-inside: avoid;">
+                    <h2 style="font-size: 16px; color: #374151; margin: 0 0 8px 0; font-weight: bold;">Status</h2>
+                    <p style="margin: 0; color: #1f2937; font-weight: bold; font-size: 14px;">${report.status}</p>
                 </div>
 
                 ${report.vehicle_info ? `
-                <div style="border: 1px solid #e5e7eb; padding: 15px; margin-bottom: 20px; background: #f9fafb; border-radius: 4px;">
-                    <h2 style="font-size: 14px; color: #374151; margin: 0 0 10px 0;">Vehicle Information</h2>
-                    <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                <div style="border: 2px solid #e5e7eb; padding: 15px; margin-bottom: 15px; background: #f9fafb; border-radius: 4px; page-break-inside: avoid;">
+                    <h2 style="font-size: 16px; color: #374151; margin: 0 0 10px 0; font-weight: bold;">Vehicle Information</h2>
+                    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
                         <tr>
-                            <td style="padding: 5px 0;"><strong>Name:</strong></td>
-                            <td style="padding: 5px 0;">${report.vehicle_info.name}</td>
-                            <td style="padding: 5px 0; padding-left: 20px;"><strong>Model:</strong></td>
-                            <td style="padding: 5px 0;">${report.vehicle_info.model}</td>
+                            <td style="padding: 6px 0; width: 25%;"><strong>Name:</strong></td>
+                            <td style="padding: 6px 0; width: 25%;">${report.vehicle_info.name}</td>
+                            <td style="padding: 6px 0; width: 25%; padding-left: 15px;"><strong>Model:</strong></td>
+                            <td style="padding: 6px 0; width: 25%;">${report.vehicle_info.model}</td>
                         </tr>
                         <tr>
-                            <td style="padding: 5px 0;"><strong>Quality:</strong></td>
-                            <td style="padding: 5px 0;">${report.vehicle_info.quality}</td>
-                            <td style="padding: 5px 0; padding-left: 20px;"><strong>Age:</strong></td>
-                            <td style="padding: 5px 0;">${report.vehicle_info.age_years} years</td>
+                            <td style="padding: 6px 0;"><strong>Quality:</strong></td>
+                            <td style="padding: 6px 0;">${report.vehicle_info.quality}</td>
+                            <td style="padding: 6px 0; padding-left: 15px;"><strong>Age:</strong></td>
+                            <td style="padding: 6px 0;">${report.vehicle_info.age_years} years</td>
                         </tr>
                         <tr>
-                            <td style="padding: 5px 0;"><strong>Total Distance:</strong></td>
-                            <td colspan="3" style="padding: 5px 0;">${report.vehicle_info.total_km.toLocaleString()} km</td>
+                            <td style="padding: 6px 0;"><strong>Total Distance:</strong></td>
+                            <td colspan="3" style="padding: 6px 0;">${report.vehicle_info.total_km.toLocaleString()} km</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 6px 0;"><strong>Type:</strong></td>
+                            <td colspan="3" style="padding: 6px 0;">Type ${report.vehicle_info.type}</td>
                         </tr>
                     </table>
                 </div>
                 ` : ''}
 
-                <div style="border: 1px solid #e5e7eb; padding: 15px; margin-bottom: 20px; background: #f9fafb; border-radius: 4px;">
-                    <h2 style="font-size: 14px; color: #374151; margin: 0 0 10px 0;">AI-Powered Maintenance Analysis</h2>
-                    <div style="line-height: 1.6; font-size: 12px; color: #374151; white-space: pre-wrap; word-wrap: break-word;">
-                        ${report.report || report.summary || 'No detailed report available'}
+                <div style="border: 2px solid #e5e7eb; padding: 15px; margin-bottom: 15px; background: #f9fafb; border-radius: 4px;">
+                    <h2 style="font-size: 16px; color: #374151; margin: 0 0 12px 0; font-weight: bold; page-break-after: avoid;">AI-Powered Maintenance Analysis</h2>
+                    <div style="line-height: 1.7; font-size: 13px; color: #374151;">
+                        ${reportHTML}
                     </div>
                 </div>
 
-                <div style="border-top: 2px solid #e5e7eb; padding-top: 15px; font-size: 11px; color: #6b7280;">
-                    <p style="margin: 0;">Generated on: ${new Date().toLocaleString()}</p>
-                    <p style="margin: 5px 0 0 0;">Status: ${report.groq_available ? 'AI-Powered Analysis' : 'Basic Analysis'}</p>
+                <div style="border-top: 2px solid #e5e7eb; padding-top: 15px; font-size: 11px; color: #6b7280; page-break-inside: avoid;">
+                    <p style="margin: 0;"><strong>Generated on:</strong> ${new Date().toLocaleString()}</p>
+                    <p style="margin: 5px 0 0 0;"><strong>Analysis Type:</strong> ${report.groq_available ? 'AI-Powered Analysis' : 'Basic Analysis'}</p>
                 </div>
             </div>
         `;
-        
+
         container.innerHTML = htmlContent;
         document.body.appendChild(container);
-        
-        // Convert to canvas
+
+        // Convert to canvas with better quality
         const canvas = await html2canvas(container, {
             scale: 2,
             useCORS: true,
             allowTaint: true,
-            backgroundColor: '#ffffff'
+            backgroundColor: '#ffffff',
+            logging: false,
+            windowWidth: 800,
+            windowHeight: container.scrollHeight
         });
-        
-        // Create PDF
+
+        // Create PDF with better page handling
         const pdf = new jsPDF({
             orientation: 'portrait',
             unit: 'mm',
             format: 'a4'
         });
-        
+
         const imgData = canvas.toDataURL('image/png');
-        const imgWidth = 190; // A4 width
+        const imgWidth = 190; // A4 width in mm (210mm - 10mm margins on each side)
+        const pageHeight = 277; // A4 height in mm (297mm - 10mm margins on each side)
         const imgHeight = (canvas.height * imgWidth) / canvas.width;
-        
-        let yPosition = 10;
-        
-        // Add image to PDF (splitting into pages if needed)
-        if (imgHeight > 277) {
-            let remainingHeight = imgHeight;
-            /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
-            while (remainingHeight > 0) {
-                const pageHeight = 277;
-                const currentHeight = Math.min(remainingHeight, pageHeight);
-                const sourceY = (imgHeight - remainingHeight) * (canvas.height / imgHeight);
-                const sourceHeight = (currentHeight * canvas.height) / imgHeight;
-                
-                const pageCanvas = document.createElement('canvas');
-                pageCanvas.width = canvas.width;
-                pageCanvas.height = sourceHeight;
-                const ctx = pageCanvas.getContext('2d');
-                if (ctx) {
-                    ctx.drawImage(canvas, 0, -sourceY, canvas.width, canvas.height);
-                    const pageImgData = pageCanvas.toDataURL('image/png');
-                    pdf.addImage(pageImgData, 'PNG', 10, yPosition, imgWidth, currentHeight);
-                }
-                
-                remainingHeight -= currentHeight;
-                yPosition = 10;
-                
-                if (remainingHeight > 0) {
-                    pdf.addPage();
-                }
-            }
-        } else {
-            pdf.addImage(imgData, 'PNG', 10, yPosition, imgWidth, imgHeight);
+
+        let heightLeft = imgHeight;
+        let position = 10; // Top margin
+
+        // Add first page
+        pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+
+        // Add additional pages if needed
+        while (heightLeft > 0) {
+            position = heightLeft - imgHeight + 10; // Account for top margin
+            pdf.addPage();
+            pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+            heightLeft -= pageHeight;
         }
-        
+
         // Save PDF
         const filename = `maintenance_report_${machineId}_${new Date().toISOString().split('T')[0]}.pdf`;
         pdf.save(filename);
-        
+
         // Cleanup
         document.body.removeChild(container);
     } catch (error) {
